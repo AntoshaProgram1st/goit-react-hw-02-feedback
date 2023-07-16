@@ -1,63 +1,78 @@
-import React, { Component } from 'react';
-import css from './App.module.css' 
-import ContactForm from 'components/contactForm/';
-import Filter from 'components/filter/';
-import ContactList from 'components/contactList/';
+import css from './App.module.css'
+import { Component } from 'react';
+import FeedbackOptions from 'components/feedbackOptions';
+import Statistics from 'components/statistics';
+import Section from 'components/section';
+import Notification from 'components/notification';
 
 class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
-  
-addContact = (newContact) => {
-  const { contacts } = this.state;
-  const existingContact = contacts.some((contact) => contact.name.toLowerCase() === newContact.name.toLowerCase());
+    state = {
+        good: 0,
+        neutral: 0,
+        bad: 0
+    };
 
-  if (existingContact) {
-    alert(`${newContact.name} is already in contacts!`);
-  } else {
-    this.setState((prevState) => ({
-      contacts: [...prevState.contacts, newContact],
-    }));
-  }
-};
-    
-  handleChangeFilter = (e) => {
-      this.setState({filter: e.target.value})
-  }
-  handleDelete = (id) => {
-        this.setState((prev) => ({
-            contacts: prev.contacts.filter((contact) => contact.id !==id),
-        }))
-    }
+    handleClickIncrement = (type) => {
+        this.setState((prevState) => ({
+            [type]: prevState[type] + 1
+        }));
+    };
+
+    countTotalFeedback = () => {
+        const { good, neutral, bad } = this.state;
+        return good + neutral + bad;
+    };
+
+    countPositiveFeedbackPercentage = () => {
+        const { good } = this.state;
+        const totalFeedback = this.countTotalFeedback();
+        return totalFeedback > 0 ? Math.round((good / totalFeedback) * 100) : 0;
+    };
 
   render() {
-    const { contacts, filter } = this.state;
-
+    const totalFeedback = this.countTotalFeedback();
+    
     return (
-      <div className={css['phonebook__container']}>
-        <h1 className={css['phonebook__title']}>Phonebook</h1>
-        
-        <ContactForm contacts={contacts} addContact={this.addContact} />
-
-        <h2 className={css['contacts__title']}>Contacts</h2>
-        <Filter filter={filter} handleChangeFilter={this.handleChangeFilter}/>
-        
-        {contacts.length === 0 ? (
-          <p>No contacts available</p>
-        ) : (
-            <ul>
-                {             
-                    contacts
-                      .filter((el) => el.name.toLowerCase().includes(filter.toLowerCase()))        
-                      .map((contact) => (
-                        <ContactList key={contact.id} contact={contact} handleDelete={this.handleDelete} />                        
-                ))}
+      <div className={css['app_container']}>
+        <Section title="Please leave feedback">
+          <div className={css['btn__conteiner']}>
+            <ul className={css['btn__list']}>
+              {Object.keys(this.state).map((option) => (
+                <FeedbackOptions
+                  key={option}
+                  option={option}
+                  handleClickIncrement={this.handleClickIncrement}
+                />
+              ))}
             </ul>
-        )}
+          </div>
+        </Section>
+
+        <Section title="Statistics">
+          {totalFeedback === 0 ? (
+            <Notification message="There is no feedback" />
+          ) : (
+            <div className={css['statistics__conteiner']}>
+              <ul className={css['statistics__list']}>
+                {Object.entries(this.state).map(([option, count]) => (
+                  <Statistics key={option} option={option} count={count} />
+                ))}
+                <li key="total" className={css['statistics__item']}>
+                  <p className={css['statistics__item-text']}>
+                    Total: {this.countTotalFeedback()}
+                  </p>
+                </li>
+                <li key="positive-feedback" className={css['statistics__item']}>
+                  <p className={css['statistics__item-text']}>
+                    Positive Feedback: {this.countPositiveFeedbackPercentage()}%
+                  </p>
+                </li>
+              </ul>
+            </div>
+          )}
+        </Section>
       </div>
-    );
+);
   }
 }
 
